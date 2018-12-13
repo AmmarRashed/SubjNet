@@ -183,7 +183,8 @@ class RedditNetworkUtils(object):
                 subreddit_weight[subreddit] += 1
                 if i + 1 == maxsize:
                     break
-
+        print("Users: {0}".format(len(user_subreddit_weight)))
+        print("Subreddit: {0}".format(len(subreddit_weight)))
         return user_subreddit_weight, subreddit_weight
 
     def calculate_users_similarity(self, filename, maxsize=1e3):
