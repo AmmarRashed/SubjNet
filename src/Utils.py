@@ -164,14 +164,18 @@ class RedditNetworkUtils(object):
         :return: user_subreddit_weight # {user: {subreddit: number of posts in that subreddit}}
                  subreddit_weight # {subreddit: total number of posts}
         """
-        user_subreddit_weight = dict()  # {user: {subreddit: number of posts in that subreddit}}
-        subreddit_weight = dict()  # {subreddit: total number of posts}
+        user_subreddit_weight = dict()  # {user: {subreddit: number of posts by that user in that subreddit}}
+        subreddit_weight = dict()  # {subreddit: total number of posts in that subreddit}
+
+        users_subjectivity = dict()  # {user: avg subjectivity}
+        subreddit_subjectivity = dict()  # {subreddit: subjectivity}
 
         with open(filename) as f:
             for i,  l in enumerate(f):
                 comment = json.loads(l)
                 user = comment["author"]
                 subreddit = comment["subreddit"]
+                sub = TextBlob(comment['body']).sentiment.subjectivity
 
                 # updating user-subreddit connection
                 user_subreddit_weight.setdefault(user, dict())
@@ -181,19 +185,35 @@ class RedditNetworkUtils(object):
                 # updating subreddit size
                 subreddit_weight.setdefault(subreddit, 0)
                 subreddit_weight[subreddit] += 1
+
+                # updating user subjectivity
+                users_subjectivity.setdefault(user, [0, 0])
+                users_subjectivity[user][0] += sub
+                users_subjectivity[user][1] += 1
+
+                # updating subreddit subjectivity
+                subreddit_subjectivity.setdefault(subreddit, 0)
+                subreddit_subjectivity[subreddit] += sub
+
                 if i + 1 == maxsize:
                     break
+        for u, (sub, count) in users_subjectivity.items():
+            users_subjectivity[u] = sub/float(count)
+
+        for subreddit, subjectivity in subreddit_subjectivity.items():
+            subreddit_subjectivity[subreddit] = subjectivity / subreddit_weight[subreddit]
+
         print("Users: {0}".format(len(user_subreddit_weight)))
         print("Subreddit: {0}".format(len(subreddit_weight)))
-        return user_subreddit_weight, subreddit_weight
+        return user_subreddit_weight, subreddit_weight, users_subjectivity, subreddit_subjectivity
 
     def calculate_users_similarity(self, filename, maxsize=1e3):
-        user_subreddit_weight, subreddit_weight = RedditNetworkUtils.\
+        user_subreddit_weight, subreddit_weight, users_subjectivity, subreddit_subjectivity = RedditNetworkUtils.\
             read_comments_into_subreddits_dict(filename, maxsize)
 
         users_similarity, users_common_e = _calculate_users_similarity(user_subreddit_weight, subreddit_weight)
-        self.users_similarity, self.users_common_e = users_similarity, users_common_e
-        return users_similarity, users_common_e
+        return users_similarity, users_common_e, users_subjectivity, subreddit_subjectivity
+
 
 # G = nx.Graph()
 # rnu = RedditNetworkUtils(G)

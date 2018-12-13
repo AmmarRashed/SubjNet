@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3cdba233-7eb5-41e6-9cad-18f8ad08bf06" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/subreddit_network-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/subreddit_network-checkpoint.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/notebooks/subreddit_network.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/subreddit_network.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Utils.py" afterDir="false" />
@@ -20,15 +21,15 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/Utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="357">
-              <caret line="186" column="58" selection-start-line="186" selection-start-column="58" selection-end-line="186" selection-end-column="58" />
+            <state relative-caret-position="502">
+              <caret line="214" column="91" lean-forward="true" selection-start-line="214" selection-start-column="15" selection-end-line="214" selection-end-column="91" />
               <folding>
                 <element signature="e#0#64#0" expanded="true" />
                 <element signature="e#2543#2729#0" />
                 <element signature="e#2588#2729#0" />
                 <element signature="e#3010#3629#0" />
                 <element signature="e#3278#3510#0" />
-                <marker date="1544736852775" expanded="true" signature="4968:5253" ph="..." />
+                <marker date="1544738957781" expanded="true" signature="4968:5253" ph="..." />
               </folding>
             </state>
           </provider>
@@ -66,6 +67,7 @@
       <find>hash(</find>
       <find>subreddit_weights</find>
       <find>subreddit_weight</find>
+      <find>subreddit_weight_subjectivity</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -170,12 +172,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1544712772349</updated>
-      <workItem from="1544712774299" duration="15180000" />
+      <workItem from="1544712774299" duration="17395000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="15180000" />
+    <option name="totallyTimeSpent" value="17395000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1853" height="1055" extended-state="6" />
@@ -234,15 +236,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/Utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="357">
-          <caret line="186" column="58" selection-start-line="186" selection-start-column="58" selection-end-line="186" selection-end-column="58" />
+        <state relative-caret-position="502">
+          <caret line="214" column="91" lean-forward="true" selection-start-line="214" selection-start-column="15" selection-end-line="214" selection-end-column="91" />
           <folding>
             <element signature="e#0#64#0" expanded="true" />
             <element signature="e#2543#2729#0" />
             <element signature="e#2588#2729#0" />
             <element signature="e#3010#3629#0" />
             <element signature="e#3278#3510#0" />
-            <marker date="1544736852775" expanded="true" signature="4968:5253" ph="..." />
+            <marker date="1544738957781" expanded="true" signature="4968:5253" ph="..." />
           </folding>
         </state>
       </provider>
