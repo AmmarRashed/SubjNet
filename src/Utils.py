@@ -75,26 +75,29 @@ def _calculate_users_similarity(user_subreddit_weight, subreddit_weight):
             p_u_e[e][u] = float(w) / subreddit_weight[e]
 
     # calculate users similarity
+    del subreddit_weight
 
-    users_common_e = dict()  # {(u1, u2): e(u1, u2) / num of e}  # baseline similarity
+    users_jaccard = dict()  # {(u1, u2): e(u1, u2) / num of e}  # baseline similarity
     users_similarity = dict()  # {(u1, u2): Maximum Likelihood similarity}
 
     for ui, es in p_e_u.items():
         for e, p_ei_ui in es.items():
             for uj, p_uj_ej in p_u_e[e].items():
+                if ui == uj:
+                    continue
                 key = tuple(sorted([ui, uj]))
-                users_common_e.setdefault(key, set())  # {(u1, u2): set of common edges}
-                is_new_e = hash(e) in users_common_e[key]
-                users_common_e[key].add(hash(e))
+                users_jaccard.setdefault(key, set())  # {(u1, u2): set of common edges}
+                is_new_e = hash(e) not in users_jaccard[key]
+                users_jaccard[key].add(hash(e))
 
                 users_similarity.setdefault(key, 1)
                 if is_new_e:
                     users_similarity[key] *= (1 - p_ei_ui*p_uj_ej)
     for users, sim in users_similarity.items():
         users_similarity[users] = 1 - sim
-        users_common_e[users] = float(len(users_common_e[users])) / len(subreddit_weight)
+        users_jaccard[users] = float(len(users_jaccard[users])) / sum([len(user_subreddit_weight[u]) for u in users])
 
-    return users_similarity, users_common_e
+    return users_similarity, users_jaccard
 
 
 class RedditNetworkUtils(object):
@@ -194,3 +197,7 @@ class RedditNetworkUtils(object):
 # G = nx.Graph()
 # rnu = RedditNetworkUtils(G)
 # rnu.read_comments_into_network("../data/RC_2013-02", "id", "parent_id")
+
+
+# rnu = RedditNetworkUtils()
+# users_similarity, users_common_e = rnu.calculate_users_similarity("../data/RC_2013-02", maxsize=1e3)
