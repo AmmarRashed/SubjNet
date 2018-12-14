@@ -53,8 +53,8 @@ def comments2df(comments, first_k=-1, columns=COLUMNS):
     return df[columns] if columns else df
 
 
-def subjectivity(text):
-    return TextBlob(text).sentiment.subjectivity
+def sentiment(text):
+    return TextBlob(text).sentiment
 
 
 def _calculate_users_similarity(user_subreddit_weight, subreddit_weight):
@@ -106,9 +106,11 @@ class RedditNetworkUtils(object):
         :param ntw: network object
         """
         self.ntw = nx.Graph()
+        self.mapped_comments = None
         self.users_similarity, self.users_common_e = None, None
 
-    def read_comments_into_network(self, filename, from_key, to_key, attrs=ATTRS, maxsize=1e3):
+    def read_comments_into_network(self, filename, from_key, to_key, node_key="author", link_key="parent_id",
+                                   attrs=ATTRS, maxsize=1e3):
         """
         :param filename: data filename
         :param node_key: field of the comment by which nodes should be defined
@@ -120,15 +122,36 @@ class RedditNetworkUtils(object):
         :param maxsize: maximum size of comments (1e3)
         :return:
         """
+        if link_key is not None and node_key is not None:
+            self.mapped_comments = RedditNetworkUtils.map_comments(filename, node_key, link_key, maxsize)
 
         with open(filename) as f:
             for i, line in enumerate(f):
-                self.add_comment_to_network(json.loads(line), from_key, to_key, attrs)
+                self.add_comment_to_network(json.loads(line), from_key, to_key, link_key, attrs)
                 if i+1 == maxsize:
                     break
 
-    def add_comment_to_network(self, comment, from_key, to_key, attrs):
+    @staticmethod
+    def map_comments(filename, node_key, link_key, maxsize):
+        ids = dict()  # {link_key: id_key}
+        with open(filename) as f:
+            for i, line in enumerate(f):
+                comment = json.loads(line)
+                ids[comment[link_key]] = comment[node_key]
+                if i+1 == maxsize:
+                    break
+        return ids
+
+    def add_comment_to_network(self, comment, from_key, to_key, link_key, attrs):
         f, t = comment[from_key], comment[to_key]
+
+        if link_key is not None:
+            try:
+                f = self.mapped_comments[f]
+                t = self.mapped_comments[t]
+            except KeyError:
+                return
+
         f, t = hash(f), hash(t)
 
         if f == t:
@@ -136,11 +159,19 @@ class RedditNetworkUtils(object):
 
         if self.ntw.has_edge(f, t):
             self.ntw.edges[(f, t)]['w'] += 1
+            self.ntw.edges[(f, t)]["subjectivity"] += sentiment(comment["body"]).subjectivity
+            self.ntw.edges[(f, t)]["polarity"] += sentiment(comment["body"]).polarity
         else:
-            self.ntw.add_edge(f, t, w=1)
+            self.ntw.add_edge(f, t, w=1, subjectivity=0, polarity=0)
 
         for attr in attrs:
-            self.ntw.edges[(f, t)][attr] = comment[attr] if attr != "body" else subjectivity(comment[attr])
+            if attr != "body":
+                self.ntw.edges[(f, t)][attr] = comment[attr]
+
+        for e in self.ntw.edges:
+            for i in ["subjectivity", "polarity"]:
+                val = self.ntw.edges[e][i]
+                self.ntw.edges[e][i] = val / float(self.ntw.edges[e]['w'])
 
     @staticmethod
     def networkx_to_snappy(nxg, directed=False):
@@ -215,9 +246,8 @@ class RedditNetworkUtils(object):
         return users_similarity, users_common_e, users_subjectivity, subreddit_subjectivity
 
 
-# G = nx.Graph()
-# rnu = RedditNetworkUtils(G)
-# rnu.read_comments_into_network("../data/RC_2013-02", "id", "parent_id")
+# rnu = RedditNetworkUtils()
+# rnu.read_comments_into_network("../data/RC_2013-02", "parent_id", "link_id")
 
 
 # rnu = RedditNetworkUtils()
