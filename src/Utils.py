@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 from warnings import warn
+import numpy as np
 
 # reading data
 import pandas as pd
@@ -193,7 +194,7 @@ class RedditNetworkUtils(object):
             except KeyError:
                 return
 
-        f, t = hash(f), hash(t)
+        f, t = int(np.int32(hash(f))), int(np.int32(hash(t)))
 
         if f == t:
             return
