@@ -11,6 +11,7 @@ from textblob import TextBlob
 # Network Analysis libraries
 import networkx as nx
 
+
 try:
     import snap
 except ImportError:
@@ -22,42 +23,17 @@ from joblib import Parallel, delayed
 
 
 COLUMNS = ["id", "author", "controversiality", "ups", "score", "link_id", "parent_id"]
-ATTRS = ["score", "body", "ups", "downs", "controversiality"]
-
-
-def read_comments(filename, maxsize=100000):
-    """
-    read the data as a stream and returns a list of comments
-    :param filename: data filename
-    :param maxsize: maxsize of the comments to read
-    :return: list of comments dictionaries
-    """
-    comments = dict()
-    with open(filename) as f:
-        for i, line in enumerate(f):
-            comments[i] = json.loads(line)
-            if i+1 == maxsize:
-                break
-    f.close()
-    return list(comments.values())
-
-
-def comments2df(comments, first_k=-1, columns=COLUMNS):
-    """
-    :param comments: list of comments
-    :param first_k: only first k comments (default all)
-    :param columns: selected columns names from the comments
-    :return: dataframe of the comments
-    """
-    df = pd.DataFrame.from_dict(comments[:first_k] if first_k > 0 else comments)
-    return df[columns] if columns else df
+ATTRS = ["score", "body", "ups", "downs", "controversiality", "subreddit"]
+METRICS = {"betweenness":nx.betweenness_centrality,
+           "closeness_centrality":nx.closeness_centrality,
+           "eigenvector_centrality":nx.eigenvector_centrality}
 
 
 def sentiment(text):
     return TextBlob(text).sentiment
 
 
-def _calculate_users_similarity(user_subreddit_weight, subreddit_weight):
+def calculate_similarity_space(user_subreddit_weight, subreddit_weight):
     user_outgoing_links = {u: sum(s.values()) for u, s in user_subreddit_weight.items()}
 
     # Calculate Maximum Likelihood
@@ -100,17 +76,48 @@ def _calculate_users_similarity(user_subreddit_weight, subreddit_weight):
     return users_similarity, users_jaccard
 
 
+def networkx_to_snappy(nxg, directed=False):
+    if directed:
+        g = snap.TNGraph.New()
+    else:
+        g = snap.TUNGraph.New()
+
+    for n in nxg.nodes():
+        g.AddNode(n)
+    for f, t in nxg.edges():
+        g.AddEdge(f, t)
+
+    return g
+
+
+def map_comments(filename, node_key, link_key, maxsize):
+    ids = dict()  # {link_key: id_key}
+    with open(filename) as f:
+        for i, line in enumerate(f):
+            comment = json.loads(line)
+            ids[comment[link_key]] = comment[node_key]
+            if i+1 == maxsize:
+                break
+    return ids
+
+
 class RedditNetworkUtils(object):
-    def __init__(self):
+    def __init__(self, directed=True, subj_key="subjectivity", pol_key="polarity",
+                 subreddit_key="subreddit", weight_key='w'):
         """
         :param ntw: network object
         """
-        self.ntw = nx.Graph()
+        self.ntw = nx.DiGraph() if directed else nx.Graph()
         self.mapped_comments = None
-        self.users_similarity, self.users_common_e = None, None
+        self.mle_similarity, self.baseline_similarity = None, None
+
+        self.subj_key = subj_key
+        self.pol_key = pol_key
+        self.subreddit_key = subreddit_key
+        self.weight_key = weight_key
 
     def read_comments_into_network(self, filename, from_key, to_key, node_key="author", link_key="parent_id",
-                                   attrs=ATTRS, maxsize=1e3):
+                                   attrs=ATTRS, metrics=METRICS, maxsize=1e3, calculate_users_similarity=False, update_node_key=False):
         """
         :param filename: data filename
         :param node_key: field of the comment by which nodes should be defined
@@ -120,27 +127,61 @@ class RedditNetworkUtils(object):
         specify which field links the node to its edge, default "link_id"
         :param attrs: list of field names to add as edges attributes
         :param maxsize: maximum size of comments (1e3)
+        :param calculate_users_similarity: boolean default False
+        :param update_node_key: boolean update dictionary {link_key: id_key}
         :return:
         """
-        if link_key is not None and node_key is not None:
-            self.mapped_comments = RedditNetworkUtils.map_comments(filename, node_key, link_key, maxsize)
+        if link_key is not None and node_key is not None\
+                and (self.mapped_comments is None or update_node_key):
+            self.mapped_comments = map_comments(filename, node_key, link_key, maxsize)
+
+        if calculate_users_similarity:
+            user_subreddit_weight = dict()  # {user: {subreddit: number of posts by that user in that subreddit}}
+            subreddit_weight = dict()  # {subreddit: total number of posts in that subreddit}
+
+
+        subreddits = set()
 
         with open(filename) as f:
-            for i, line in enumerate(f):
-                self.add_comment_to_network(json.loads(line), from_key, to_key, link_key, attrs)
-                if i+1 == maxsize:
+            for i, l in enumerate(f):
+                comment = json.loads(l)
+                self.add_comment_to_network(comment, from_key, to_key, link_key, attrs)
+
+                subreddit = comment["subreddit"]
+
+                subreddits.add(subreddit)
+
+                if calculate_users_similarity:
+                    user = comment["author"]
+
+                    # updating user-subreddit connection
+                    user_subreddit_weight.setdefault(user, dict())
+                    user_subreddit_weight[user].setdefault(subreddit, 0)
+                    user_subreddit_weight[user][subreddit] += 1
+
+                    # updating subreddit size
+                    subreddit_weight.setdefault(subreddit, 0)
+                    subreddit_weight[subreddit] += 1
+
+                if i + 1 == maxsize:
                     break
 
-    @staticmethod
-    def map_comments(filename, node_key, link_key, maxsize):
-        ids = dict()  # {link_key: id_key}
-        with open(filename) as f:
-            for i, line in enumerate(f):
-                comment = json.loads(line)
-                ids[comment[link_key]] = comment[node_key]
-                if i+1 == maxsize:
-                    break
-        return ids
+        for e in self.ntw.edges:
+            for i in ["subjectivity", "polarity"]:
+                val = self.ntw.edges[e][i]
+                self.ntw.edges[e][i] = val / float(self.ntw.edges[e]['w'])
+
+        print("Users (nodes): {0}".format(len(self.ntw.nodes)))
+        print("Subreddits: {0}".format(len(subreddits)))
+        print("Edges: {0}".format(len(self.ntw.edges)))
+        if calculate_users_similarity:
+            self.set_similarities(*calculate_similarity_space(user_subreddit_weight, subreddit_weight))
+
+        self.aggergate_sentiment()
+        self.augment_nodes(metrics)
+
+    def set_similarities(self, mle_similarity, baseline_similarity):
+        self.mle_similarity, self.baseline_similarity = mle_similarity, baseline_similarity
 
     def add_comment_to_network(self, comment, from_key, to_key, link_key, attrs):
         f, t = comment[from_key], comment[to_key]
@@ -157,10 +198,12 @@ class RedditNetworkUtils(object):
         if f == t:
             return
 
+        sent = sentiment(comment["body"])
+
         if self.ntw.has_edge(f, t):
             self.ntw.edges[(f, t)]['w'] += 1
-            self.ntw.edges[(f, t)]["subjectivity"] += sentiment(comment["body"]).subjectivity
-            self.ntw.edges[(f, t)]["polarity"] += sentiment(comment["body"]).polarity
+            self.ntw.edges[(f, t)]["subjectivity"] += sent.subjectivity
+            self.ntw.edges[(f, t)]["polarity"] += sent.polarity
         else:
             self.ntw.add_edge(f, t, w=1, subjectivity=0, polarity=0)
 
@@ -168,87 +211,67 @@ class RedditNetworkUtils(object):
             if attr != "body":
                 self.ntw.edges[(f, t)][attr] = comment[attr]
 
+    def aggergate_sentiment(self):
+        """
+        :param subj_key: name of subjectivity attribute, default ("subjectivity")
+        :param pol_key: name of polarity attribute, default ("polarity")
+        :return:
+        """
+        users_subjectivity = dict()  # {user: subjectivity avg}
+        users_polarity = dict()  # {user: polarity avg}
+
+        subreddit_subjectivity = dict()  # {subreddit: subjectivity avg}
+        subreddit_polarity = dict()  # {subreddit: polarity avg}
+
         for e in self.ntw.edges:
-            for i in ["subjectivity", "polarity"]:
-                val = self.ntw.edges[e][i]
-                self.ntw.edges[e][i] = val / float(self.ntw.edges[e]['w'])
+            f, t = e
+            subj = self.ntw.edges[e][self.subj_key]
+            pol = self.ntw.edges[e][self.pol_key]
+            subreddit = self.ntw.edges[e][self.subreddit_key]
 
-    @staticmethod
-    def networkx_to_snappy(nxg, directed=False):
-        if directed:
-            g = snap.TNGraph.New()
-        else:
-            g = snap.TUNGraph.New()
+            users_subjectivity.setdefault(f, 0)
+            users_subjectivity[f] += subj
 
-        for n in nxg.nodes():
-            g.AddNode(n)
-        for f, t in nxg.edges():
-            g.AddEdge(f, t)
+            users_polarity.setdefault(f, 0)
+            users_polarity[f] += pol
 
-        return g
+            subreddit_subjectivity.setdefault(subreddit, 0)
+            subreddit_subjectivity[subreddit] += subj
 
-    @staticmethod
-    def read_comments_into_subreddits_dict(filename, maxsize=1e3):
-        """
-        :param filename: data filename
-        :param maxsize: max number of comments
-        :return: user_subreddit_weight # {user: {subreddit: number of posts in that subreddit}}
-                 subreddit_weight # {subreddit: total number of posts}
-        """
-        user_subreddit_weight = dict()  # {user: {subreddit: number of posts by that user in that subreddit}}
-        subreddit_weight = dict()  # {subreddit: total number of posts in that subreddit}
+            subreddit_polarity.setdefault(subreddit, 0)
+            subreddit_polarity[subreddit] += pol
 
-        users_subjectivity = dict()  # {user: avg subjectivity}
-        subreddit_subjectivity = dict()  # {subreddit: subjectivity}
+        for (user, d), (_, ind), (_, outd) in zip(self.ntw.degree(weight=self.weight_key),
+                                                  self.ntw.in_degree(weight=self.weight_key),
+                                                  self.ntw.out_degree(weight=self.weight_key)):
 
-        with open(filename) as f:
-            for i,  l in enumerate(f):
-                comment = json.loads(l)
-                user = comment["author"]
-                subreddit = comment["subreddit"]
-                sub = TextBlob(comment['body']).sentiment.subjectivity
+            self.ntw.nodes[user][self.subj_key] = users_subjectivity[user] / outd if user in users_subjectivity else 0
+            self.ntw.nodes[user][self.pol_key] = users_polarity[user] / outd if user in users_polarity else 0
 
-                # updating user-subreddit connection
-                user_subreddit_weight.setdefault(user, dict())
-                user_subreddit_weight[user].setdefault(subreddit, 0)
-                user_subreddit_weight[user][subreddit] += 1
+            self.ntw.nodes[user]["deg"] = d
+            self.ntw.nodes[user]["indeg"] = ind
+            self.ntw.nodes[user]["outdeg"] = outd
 
-                # updating subreddit size
-                subreddit_weight.setdefault(subreddit, 0)
-                subreddit_weight[subreddit] += 1
+            self.ntw.nodes[user]["w_deg"] = d
+            self.ntw.nodes[user]["w_indeg"] = ind
+            self.ntw.nodes[user]["w_outdeg"] = outd
 
-                # updating user subjectivity
-                users_subjectivity.setdefault(user, [0, 0])
-                users_subjectivity[user][0] += sub
-                users_subjectivity[user][1] += 1
+    def augment_nodes(self, metrics):
 
-                # updating subreddit subjectivity
-                subreddit_subjectivity.setdefault(subreddit, 0)
-                subreddit_subjectivity[subreddit] += sub
-
-                if i + 1 == maxsize:
-                    break
-        for u, (sub, count) in users_subjectivity.items():
-            users_subjectivity[u] = sub/float(count)
-
-        for subreddit, subjectivity in subreddit_subjectivity.items():
-            subreddit_subjectivity[subreddit] = subjectivity / subreddit_weight[subreddit]
-
-        print("Users: {0}".format(len(user_subreddit_weight)))
-        print("Subreddit: {0}".format(len(subreddit_weight)))
-        return user_subreddit_weight, subreddit_weight, users_subjectivity, subreddit_subjectivity
-
-    def calculate_users_similarity(self, filename, maxsize=1e3):
-        user_subreddit_weight, subreddit_weight, users_subjectivity, subreddit_subjectivity = RedditNetworkUtils.\
-            read_comments_into_subreddits_dict(filename, maxsize)
-
-        users_similarity, users_common_e = _calculate_users_similarity(user_subreddit_weight, subreddit_weight)
-        return users_similarity, users_common_e, users_subjectivity, subreddit_subjectivity
-
+        for m, fun in metrics.items():
+            try:
+                for ix, v in fun(self.ntw).items():
+                    self.ntw.nodes[ix][m] = v
+            except nx.exception.PowerIterationFailedConvergence:
+                continue
+            try:
+                for ix, v in fun(self.ntw, weight=self.weight_key).items():
+                    self.ntw.nodes[ix]["w_{0}".format(m)] = v
+            except TypeError:
+                continue
+            except nx.exception.PowerIterationFailedConvergence:
+                continue
 
 # rnu = RedditNetworkUtils()
-# rnu.read_comments_into_network("../data/RC_2013-02", "parent_id", "link_id")
-
-
-# rnu = RedditNetworkUtils()
-# users_similarity, users_common_e = rnu.calculate_users_similarity("../data/RC_2013-02", maxsize=1e3)
+# rnu.read_comments_into_network("../data/RC_2013-02", "link_id", "parent_id", maxsize=5e3,
+#                                calculate_users_similarity=True)
