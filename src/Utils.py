@@ -64,8 +64,8 @@ def calculate_similarity_space(user_subreddit_weight, subreddit_weight):
                     continue
                 key = tuple(sorted([ui, uj]))
                 users_jaccard.setdefault(key, set())  # {(u1, u2): set of common edges}
-                is_new_e = hash(e) not in users_jaccard[key]
-                users_jaccard[key].add(hash(e))
+                is_new_e = e not in users_jaccard[key]
+                users_jaccard[key].add(e)
 
                 users_similarity.setdefault(key, 1)
                 if is_new_e:
@@ -91,14 +91,16 @@ def networkx_to_snappy(nxg, directed=False):
     return g
 
 
-def map_comments(filename, node_key, link_key, maxsize):
-    ids = dict()  # {link_key: id_key}
+def map_linkid_to_authors(filename, node_key, link_key, maxsize):
+    ids = dict()  # {id: author}
     with open(filename) as f:
         for i, line in enumerate(f):
-            comment = json.loads(line)
-            ids[comment[link_key]] = comment[node_key]
-            if i+1 == maxsize:
+            if i == maxsize:
                 break
+            comment = json.loads(line)
+            if comment[node_key] == "[deleted]":
+                continue
+            ids[comment[link_key]] = comment[node_key]
     return ids
 
 
@@ -109,15 +111,16 @@ class RedditNetworkUtils(object):
         :param ntw: network object
         """
         self.ntw = nx.DiGraph() if directed else nx.Graph()
-        self.mapped_comments = None
-        self.mle_similarity, self.baseline_similarity = None, None
+        self.mle_similarity, self.baseline_similarity = None, None  # {(u1, u2): similarity}
 
         self.subj_key = subj_key
         self.pol_key = pol_key
         self.subreddit_key = subreddit_key
         self.weight_key = weight_key
 
-    def read_comments_into_network(self, filename, from_key, to_key, node_key="author", link_key="parent_id",
+        self.nodes_ids = dict()  # {node: id}
+
+    def read_comments_into_network(self, filename, from_key, to_key, node_key="author", link_key="link_id",
                                    attrs=ATTRS, metrics=METRICS, maxsize=1e3, calculate_users_similarity=False, update_node_key=False):
         """
         :param filename: data filename
@@ -132,28 +135,46 @@ class RedditNetworkUtils(object):
         :param update_node_key: boolean update dictionary {link_key: id_key}
         :return:
         """
-        if link_key is not None and node_key is not None\
-                and (self.mapped_comments is None or update_node_key):
-            self.mapped_comments = map_comments(filename, node_key, link_key, maxsize)
+        comments_authors = None
+        if link_key is not None and node_key is not None:
+            comments_authors = map_linkid_to_authors(filename, node_key, link_key, maxsize)
 
         if calculate_users_similarity:
             user_subreddit_weight = dict()  # {user: {subreddit: number of posts by that user in that subreddit}}
             subreddit_weight = dict()  # {subreddit: total number of posts in that subreddit}
 
-
         subreddits = set()
 
-        with open(filename) as f:
-            for i, l in enumerate(f):
+        with open(filename) as data:
+            self.nodes_ids = dict()  # {node: id}
+
+            for i, l in enumerate(data):
+                if i == maxsize:
+                    break
+
                 comment = json.loads(l)
-                self.add_comment_to_network(comment, from_key, to_key, link_key, attrs)
+                f, t = comment[from_key], comment[to_key]
+
+                if comments_authors is not None:
+                    try:
+                        f, t = comments_authors[f], comments_authors[t]
+                    except KeyError:
+                        continue
+
+                if f == t:
+                    continue
+
+                self.nodes_ids.setdefault(f, len(self.nodes_ids))
+                self.nodes_ids.setdefault(t, len(self.nodes_ids))
+
+                self.add_comment_to_network(self.nodes_ids[f], self.nodes_ids[t], comment, attrs)
 
                 subreddit = comment["subreddit"]
 
                 subreddits.add(subreddit)
 
                 if calculate_users_similarity:
-                    user = comment["author"]
+                    user = self.nodes_ids[comment["author"]]
 
                     # updating user-subreddit connection
                     user_subreddit_weight.setdefault(user, dict())
@@ -163,9 +184,6 @@ class RedditNetworkUtils(object):
                     # updating subreddit size
                     subreddit_weight.setdefault(subreddit, 0)
                     subreddit_weight[subreddit] += 1
-
-                if i + 1 == maxsize:
-                    break
 
         for e in self.ntw.edges:
             for i in ["subjectivity", "polarity"]:
@@ -182,23 +200,41 @@ class RedditNetworkUtils(object):
         self.augment_nodes(metrics)
 
     def set_similarities(self, mle_similarity, baseline_similarity):
+        # {node:
+        # [count,
+        # mle-scaled subjectivity,
+        # mle-scaled polarity,
+        # bl-scaled subjectivity,
+        # bl-scaled polarity]}
+        node_sentiments = dict()
+        for f, t, data in self.ntw.edges(data=True):
+            node_sentiments.setdefault(f, [0, 0, 0])
+
+            subj=data["subjectivity"]
+            pol=data["polarity"]
+
+            ix = tuple(sorted([f, t]))
+            mle_sim = mle_similarity[ix]
+            bl_sim = baseline_similarity[ix]
+
+            node_sentiments[f][0] += 1
+
+            node_sentiments[f][1] += mle_sim * subj
+            node_sentiments[f][2] += mle_sim * pol
+            node_sentiments[f][3] += bl_sim * subj
+            node_sentiments[f][4] += bl_sim * pol
+
+        for n in node_sentiments:
+            count, mle_subj, mle_pol, bl_subj, bl_pol = node_sentiments[n]
+
+            self.ntw.nodes[n]["mle_subj"] = mle_subj / count
+            self.ntw.nodes[n]["mle_pol"] = mle_pol / count
+            self.ntw.nodes[n]["bl_subj"] = bl_subj / count
+            self.ntw.nodes[n]["bl_pol"] = bl_pol / count
+
         self.mle_similarity, self.baseline_similarity = mle_similarity, baseline_similarity
 
-    def add_comment_to_network(self, comment, from_key, to_key, link_key, attrs):
-        f, t = comment[from_key], comment[to_key]
-
-        if link_key is not None:
-            try:
-                f = self.mapped_comments[f]
-                t = self.mapped_comments[t]
-            except KeyError:
-                return
-
-        f, t = int(np.int32(hash(f))), int(np.int32(hash(t)))
-
-        if f == t:
-            return
-
+    def add_comment_to_network(self, f, t, comment, attrs):
         sent = sentiment(comment["body"])
 
         if self.ntw.has_edge(f, t):
@@ -242,9 +278,9 @@ class RedditNetworkUtils(object):
             subreddit_polarity.setdefault(subreddit, 0)
             subreddit_polarity[subreddit] += pol
 
-        for (user, d), (_, ind), (_, outd) in zip(self.ntw.degree(weight=self.weight_key),
-                                                  self.ntw.in_degree(weight=self.weight_key),
-                                                  self.ntw.out_degree(weight=self.weight_key)):
+        for (user, d), (_, ind), (_, outd) in zip(self.ntw.degree(),
+                                                  self.ntw.in_degree(),
+                                                  self.ntw.out_degree()):
 
             self.ntw.nodes[user][self.subj_key] = users_subjectivity[user] / outd if user in users_subjectivity else 0
             self.ntw.nodes[user][self.pol_key] = users_polarity[user] / outd if user in users_polarity else 0
@@ -253,9 +289,6 @@ class RedditNetworkUtils(object):
             self.ntw.nodes[user]["indeg"] = ind
             self.ntw.nodes[user]["outdeg"] = outd
 
-            self.ntw.nodes[user]["w_deg"] = d
-            self.ntw.nodes[user]["w_indeg"] = ind
-            self.ntw.nodes[user]["w_outdeg"] = outd
 
     def augment_nodes(self, metrics):
 
@@ -273,6 +306,14 @@ class RedditNetworkUtils(object):
             except nx.exception.PowerIterationFailedConvergence:
                 continue
 
+
+    def augment_nodes_similarities(self):
+        for u1 in self.ntw.nodes:
+            for u2 in nx.neighbors(self.ntw, u1):
+                mle = self.mle_similarity[tuple(sorted([u1, u2]))]
+                bl = self.baseline_similarity[tuple(sorted([u1, u2]))]
+
+
 # rnu = RedditNetworkUtils()
-# rnu.read_comments_into_network("../data/RC_2013-02", "link_id", "parent_id", maxsize=5e3,
+# rnu.read_comments_into_network("../data/RC_2013-02", "parent_id", "link_id", maxsize=1e3,
 #                                calculate_users_similarity=True)

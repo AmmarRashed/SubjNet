@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BookmarkManager">
+    <bookmark url="file://$PROJECT_DIR$/src/Utils.py" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="3cdba233-7eb5-41e6-9cad-18f8ad08bf06" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/authors_network-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/authors_network-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/data_exploration-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/data_exploration-checkpoint.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/notebooks/authors_network.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/authors_network.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/data_exploration.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/data_exploration.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Utils.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -13,18 +19,17 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/SNA$Utils.coverage" NAME="Utils Coverage Results" MODIFIED="1544884909029" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/SNA$Utils.coverage" NAME="Utils Coverage Results" MODIFIED="1545166492396" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/Utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="311">
-              <caret line="196" column="61" selection-start-line="196" selection-start-column="61" selection-end-line="196" selection-end-column="61" />
+            <state relative-caret-position="200">
+              <caret line="92" lean-forward="true" selection-start-line="92" selection-end-line="103" selection-end-column="14" />
               <folding>
                 <element signature="e#0#64#0" expanded="true" />
-                <element signature="e#992#2621#0" />
               </folding>
             </state>
           </provider>
@@ -33,11 +38,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/extra.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="619">
+            <state relative-caret-position="915">
               <caret line="61" column="21" selection-start-line="61" selection-start-column="21" selection-end-line="61" selection-end-column="21" />
-              <folding>
-                <element signature="e#978#2607#0" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -53,40 +55,43 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>update_</find>
-      <find>.sentiment</find>
-      <find>sentiment</find>
-      <find>polarity</find>
-      <find>subjectivity</find>
-      <find>users_subjectivity</find>
-      <find>add_networ</find>
-      <find>read_comments_into_network</find>
-      <find>users_sub</find>
-      <find>g.</find>
-      <find>directed</find>
-      <find>&quot;parit</find>
-      <find>subreddit_subjec</find>
-      <find>weight_key</find>
-      <find>map_comments</find>
-      <find>aggregat</find>
-      <find>users:</find>
-      <find>read_comments</find>
-      <find>read_comments(</find>
-      <find>_calculate_users_similarity(</find>
-      <find>calculate_users_similarity(</find>
-      <find>_calculate_users_similarity</find>
+      <find>METRICS</find>
+      <find>metrics</find>
+      <find>users_similarity</find>
+      <find>hash(</find>
+      <find>self.edges_ids</find>
+      <find>hash(e</find>
+      <find>edges_ids</find>
+      <find>add(e)</find>
+      <find>augment_nodes</find>
+      <find>polarity&quot;</find>
       <find>set_similarities</find>
-      <find>&quot;subreddit:</find>
-      <find>&quot;subreddit</find>
-      <find>subj_key</find>
-      <find>nodes[</find>
+      <find>[ix</find>
+      <find>mle_similarity</find>
+      <find>nodes_ids</find>
+      <find>self.nodes_ids</find>
+      <find>self.nodes_ids.setdefault(f, len(self.nodes_ids))</find>
+      <find>mapped_comments</find>
+      <find>linkid2</find>
+      <find>map_comments</find>
+      <find>is not None</find>
+      <find>comment</find>
       <find>user_subreddit_weight</find>
-      <find>hash</find>
-      <find>np.it</find>
+      <find>calculate_similarity_space</find>
+      <find>mle_sim</find>
+      <find>self.ntw.edges</find>
+      <find>add_comment_to_network</find>
+      <find>return f, t</find>
+      <find>f =</find>
+      <find>comments_authors</find>
+      <find>map_linkid_to_authors</find>
     </findStrings>
     <replaceStrings>
       <replace>subjectivity</replace>
       <replace>calculate_users_similarity</replace>
+      <replace>users</replace>
+      <replace>get_comments_authors</replace>
+      <replace>map_linkid_to_authors</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -115,6 +120,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -131,7 +137,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -193,23 +198,26 @@
       <option name="presentableId" value="Default" />
       <updated>1544712772349</updated>
       <workItem from="1544712774299" duration="20471000" />
-      <workItem from="1544879244333" duration="8471000" />
+      <workItem from="1544879244333" duration="9071000" />
+      <workItem from="1544970212758" duration="3000" />
+      <workItem from="1544992557936" duration="2000" />
+      <workItem from="1545159784994" duration="8640000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="28942000" />
+    <option name="totallyTimeSpent" value="38187000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1853" height="1055" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.25235197" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.26342005" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32937366" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.32937366" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.32937366" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.36933047" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -229,6 +237,17 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/Utils.py</url>
+          <line>43</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/typeshed/stdlib/2/typing.pyi">
@@ -255,21 +274,24 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/extra.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="619">
+        <state relative-caret-position="915">
           <caret line="61" column="21" selection-start-line="61" selection-start-column="21" selection-end-line="61" selection-end-column="21" />
-          <folding>
-            <element signature="e#978#2607#0" />
-          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/pydevd.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="185">
+          <caret line="1134" selection-start-line="1134" selection-end-line="1134" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/Utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="311">
-          <caret line="196" column="61" selection-start-line="196" selection-start-column="61" selection-end-line="196" selection-end-column="61" />
+        <state relative-caret-position="200">
+          <caret line="92" lean-forward="true" selection-start-line="92" selection-end-line="103" selection-end-column="14" />
           <folding>
             <element signature="e#0#64#0" expanded="true" />
-            <element signature="e#992#2621#0" />
           </folding>
         </state>
       </provider>
