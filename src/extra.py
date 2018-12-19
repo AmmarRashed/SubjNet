@@ -1,32 +1,7 @@
 from Utils import *
 
 
-def read_comments(filename, maxsize=100000):
-    """
-    read the data as a stream and returns a list of comments
-    :param filename: data filename
-    :param maxsize: maxsize of the comments to read
-    :return: list of comments dictionaries
-    """
-    comments = dict()
-    with open(filename) as f:
-        for i, line in enumerate(f):
-            comments[i] = json.loads(line)
-            if i+1 == maxsize:
-                break
-    f.close()
-    return list(comments.values())
 
-
-def comments2df(comments, first_k=-1, columns=COLUMNS):
-    """
-    :param comments: list of comments
-    :param first_k: only first k comments (default all)
-    :param columns: selected columns names from the comments
-    :return: dataframe of the comments
-    """
-    df = pd.DataFrame.from_dict(comments[:first_k] if first_k > 0 else comments)
-    return df[columns] if columns else df
 
 
 def read_comments_into_subreddits_dict(filename, maxsize=1e3):
