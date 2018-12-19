@@ -91,19 +91,6 @@ def networkx_to_snappy(nxg, directed=False):
     return g
 
 
-def map_linkid_to_authors(filename, node_key, link_key, maxsize):
-    ids = dict()  # {id: author}
-    with open(filename) as f:
-        for i, line in enumerate(f):
-            if i == maxsize:
-                break
-            comment = json.loads(line)
-            if comment[node_key] == "[deleted]":
-                continue
-            ids[comment[link_key]] = comment[node_key]
-    return ids
-
-
 class RedditNetworkUtils(object):
     def __init__(self, directed=True, subj_key="subjectivity", pol_key="polarity",
                  subreddit_key="subreddit", weight_key='w'):
@@ -120,8 +107,9 @@ class RedditNetworkUtils(object):
 
         self.nodes_ids = dict()  # {node: id}
 
-    def read_comments_into_network(self, filename, from_key, to_key, node_key="author", link_key="link_id",
-                                   attrs=ATTRS, metrics=METRICS, maxsize=1e3, calculate_users_similarity=False, update_node_key=False):
+    def read_comments_into_network(self, filename, from_key, to_key, node_key="author", link_key="parent_id",
+                                   attrs=ATTRS, metrics=METRICS, maxsize=1e3, calculate_users_similarity=False,
+                                   reverse_edges=False):
         """
         :param filename: data filename
         :param node_key: field of the comment by which nodes should be defined
@@ -132,7 +120,9 @@ class RedditNetworkUtils(object):
         :param attrs: list of field names to add as edges attributes
         :param maxsize: maximum size of comments (1e3)
         :param calculate_users_similarity: boolean default False
-        :param update_node_key: boolean update dictionary {link_key: id_key}
+        :param reverse_edges: boolean, this is a way around to handle data sparsity
+        e.g. if we specify edges to be (link_id -> parent_id) we need to specify link_key as link_id, but that results
+        in all edges being between the same authors. So we specify link_key as parent_id, then construct the network as parent_id to link_id
         :return:
         """
         comments_authors = None
@@ -153,6 +143,11 @@ class RedditNetworkUtils(object):
                     break
 
                 comment = json.loads(l)
+                author = comment["author"]
+
+                if author == "[deleted]":
+                    continue
+
                 f, t = comment[from_key], comment[to_key]
 
                 if comments_authors is not None:
@@ -167,6 +162,8 @@ class RedditNetworkUtils(object):
                 self.nodes_ids.setdefault(f, len(self.nodes_ids))
                 self.nodes_ids.setdefault(t, len(self.nodes_ids))
 
+                if reverse_edges:
+                    f, t = t, f
                 self.add_comment_to_network(self.nodes_ids[f], self.nodes_ids[t], comment, attrs)
 
                 subreddit = comment["subreddit"]
@@ -174,7 +171,7 @@ class RedditNetworkUtils(object):
                 subreddits.add(subreddit)
 
                 if calculate_users_similarity:
-                    user = self.nodes_ids[comment["author"]]
+                    user = self.nodes_ids[f]
 
                     # updating user-subreddit connection
                     user_subreddit_weight.setdefault(user, dict())
