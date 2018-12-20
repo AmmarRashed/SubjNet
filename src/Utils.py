@@ -86,6 +86,7 @@ def get_users_similarity(filename, max_size=1e4):
 
     users_posts_counts = dict()  # {user: number of posts}
     users_sentiments = dict()  # {user: [avg polarity, avg subjectivity]}
+    users_subreddits = dict()  # {user: {subreddit: #  user's posts in that subreddit}}
 
     mle_similarities = dict()  # {e: mle similarity}
     jaccard_similarities = dict()  # {e:jaccard similarity}
@@ -95,6 +96,7 @@ def get_users_similarity(filename, max_size=1e4):
             comment = json.loads(l)
             author = comment["author"]
             link = comment["link_id"]
+            subreddit = comment["subreddit"]
             sent = sentiment(comment["body"])
 
             users_ids.setdefault(author, len(users_ids))
@@ -110,6 +112,10 @@ def get_users_similarity(filename, max_size=1e4):
             users_sentiments.setdefault(user, [0., 0.])
             users_sentiments[user][0] += sent.polarity
             users_sentiments[user][1] += sent.subjectivity
+
+            users_subreddits.setdefault(user, dict())
+            users_subreddits[user].setdefault(subreddit, 0)
+            users_subreddits[user][subreddit] += 1
 
             if i + 1 == max_size: break
 
@@ -137,7 +143,7 @@ def get_users_similarity(filename, max_size=1e4):
             users_sentiments[u] = [pol / n, subj / n]
 
         warn("Similarities are not normalized. Make sure to normalize MLE as 1-Sm, and Jaccard as Sj/Union")
-        return mle_similarities, jaccard_similarities, users_sentiments
+        return mle_similarities, jaccard_similarities, users_sentiments, users_subreddits
 
 
 def component2graph(component, graph):
@@ -162,21 +168,22 @@ def component2graph(component, graph):
 def get_biggest_component(graph, print_first_k=5):
     components = sorted([subG for subG in nx.connected_components(graph)], key=lambda x: len(x), reverse=True)
     print("There are {0} components".format(len(components)))
+    cg = None
     for i, c in enumerate(components[:print_first_k]):
         if i == 0:
             cg = component2graph(c, graph)
         else:
             component2graph(c, graph)
-    return cg
+    return cg if cg else graph
 
 
-def construct_mle_network(mle_similarities, threshold=0.3, sentiments=None, normalize=True):
+def construct_mle_network(mle_similarities, threshold=0.3, sentiments=None, subreddits=None, normalize=True):
     g = nx.Graph()
     for (u1, u2), p in mle_similarities.items():
         sim = 1 - p if normalize else p
         if sim < threshold: continue
 
-        g.add_edge(u1, u2, sim=sim)
+        g.add_edge(u1, u2, mle=sim)
 
     if sentiments is not None:
         for n in g.nodes():
@@ -186,10 +193,11 @@ def construct_mle_network(mle_similarities, threshold=0.3, sentiments=None, norm
 
     print("{0} nodes".format(len(g.nodes)))
     print("{0} edges".format(len(g.edges)))
-    return g
+
+    return add_subreddits(g, subreddits) if subreddits else g
 
 
-def construct_jaccard_network(jaccard_similarities, threshold=3, sentiments=None):
+def construct_jaccard_network(jaccard_similarities, threshold=3, sentiments=None, subreddits=None):
     g = nx.Graph()
     for (u1, u2), w in jaccard_similarities.items():
         try:
@@ -200,7 +208,7 @@ def construct_jaccard_network(jaccard_similarities, threshold=3, sentiments=None
 
         if w < threshold: continue
 
-        g.add_edge(u1, u2, sim=sim, w=w)
+        g.add_edge(u1, u2, jac=sim, w=w)
 
     if sentiments is not None:
         for n in g.nodes():
@@ -210,6 +218,15 @@ def construct_jaccard_network(jaccard_similarities, threshold=3, sentiments=None
 
     print("{0} nodes".format(len(g.nodes)))
     print("{0} edges".format(len(g.edges)))
+    return add_subreddits(g, subreddits) if subreddits else g
+
+
+def add_subreddits(g, users_subreddits):
+    for n in g.nodes:
+        subreddits = sorted([(k, 100.*v/len(users_subreddits[n]))
+                             for k, v in users_subreddits[n].items()], key=lambda x:x[1], reverse=True)
+        g.nodes[n]["subreddit"] = subreddits[0][0]
+        g.nodes[n]["subs"] = "-".join([str(s) for s in subreddits])
     return g
 
 
@@ -230,19 +247,20 @@ def girvan_newmann(nxg):
     return nxg
 
 
-def augment_nodes(graph, metrics=METRICS, weight=None, community_detection=True):
+def augment_nodes(graph, metrics=METRICS, weight=None, community_detection=False):
     for m, fun in metrics.items():
-        attrs = {} if weight is None else {"weight":weight}
+        attrs = {} if weight is None else {"weight": weight}
+        m = "{0}_".format(weight) + m if weight else m
         try:
             for ix, v in dict(fun(graph, **attrs)).items():
-                m = "w_"+m if weight else m
                 graph.nodes[ix][m] = v
         except nx.exception.PowerIterationFailedConvergence:
             continue
         except TypeError:
             continue
 
-    print("Diameter: {0}".format(nx.diameter(graph)))
-    print("Transitivity: {0}".format(nx.transitivity(graph)))
+    if community_detection:
+        print("Diameter: {0}".format(nx.diameter(graph)))
+        print("Transitivity: {0}".format(nx.transitivity(graph)))
 
     return girvan_newmann(graph) if community_detection else graph
