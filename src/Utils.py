@@ -269,9 +269,11 @@ def get_biggest_component(graph, print_first_k=5):
 
 def construct_network(bgr_similarities, jaccard_similarities, threshold_key, threshold, sentiments, subreddits):
     g = nx.DiGraph()
-    for (u1, u2), bgr in bgr_similarities.items():
-        w, union_counts = jaccard_similarities[tuple(sorted([u1, u2]))]
-        bgr = (1 - bgr) ** (1./w)
+    for (u1, u2), (w, union_counts) in jaccard_similarities.items():
+        bgr = 1 - bgr_similarities[(u1, u2)] if (u1, u2) in bgr_similarities else 0
+        if (u2, u1) in bgr_similarities:
+            bgr += 1 - bgr_similarities[(u2, u1)]
+        bgr = bgr ** (1./w)
         jac = float(w) / union_counts
 
         if threshold_key.lower() == "jaccard":
@@ -404,31 +406,44 @@ def propagate_opinions(g, propagator="bgr", stubbornness="subjectivity"):
     return new_g
 
 
-def biased_assimilation_analysis(g, ps, propagators, T):
+def baa(ntw, propagator, T):
+    opinion_network = ntw.copy()
+    metrics = {"GDI": np.zeros(T),
+               "NDI w": np.zeros(T),
+               "NDI jac": np.zeros(T),
+               "NDI bgr": np.zeros(T)
+               }
+    opinion_networks = list()
+    for t in range(T):
+        ntw_at_t = propagate_opinions(opinion_network, propagator)
+        gdi = global_disagreement_index(ntw_at_t)
+        ndi_w = network_disagreement_index(ntw_at_t, "w")
+        ndi_jac = network_disagreement_index(ntw_at_t, "jac")
+        ndi_bgr = network_disagreement_index(ntw_at_t, "bgr")
+        for k, v in zip(["GDI", "NDI w", "NDI jac", "NDI bgr"], [gdi, ndi_w, ndi_jac, ndi_bgr]):
+            metrics[k][t] = v
+        opinion_network = ntw_at_t
+        opinion_networks.append(opinion_network)
+    return propagator, metrics, opinion_networks
+
+
+def biased_assimilation_analysis(g, p, propagators, T):
+    opinion_ntw = assign_opinions(g, p)
+    print("P: {0}\n".format(p))
+
     results = dict()
-    for p in ps:
-        results.setdefault(p, dict())
-        opinion_ntw = assign_opinions(g, p)
-        print("P: {0}\n".format(p))
-        for propagator in propagators:
-            results[p].setdefault(propagator, {"GDI": np.zeros(T),
-                                               "NDI w": np.zeros(T),
-                                               "NDI jac": np.zeros(T),
-                                               "NDI bgr": np.zeros(T)
-                                               })
-            print("Propagating with: {0}".format(propagator))
-            for t in range(T):
-                ntw_at_t = propagate_opinions(opinion_ntw, propagator)
-                gdi = global_disagreement_index(ntw_at_t)
-                ndi_w = network_disagreement_index(ntw_at_t, "w")
-                ndi_jac = network_disagreement_index(ntw_at_t, "jac")
-                ndi_bgr = network_disagreement_index(ntw_at_t, "bgr")
-                for k, v in zip(["GDI", "NDI w", "NDI jac", "NDI bgr"], [gdi, ndi_w, ndi_jac, ndi_bgr]):
-                    results[p][propagator][k][t] = v
-                opinion_ntw = ntw_at_t
-        print("-" * 40)
-        plot_results(results[p], p)
-    return results
+    opinion_networks = dict()
+
+    chunks = Parallel(n_jobs=min(len(propagators), multiprocessing.cpu_count()))\
+        (delayed(baa)(opinion_ntw, propagator, T) for propagator in propagators)
+    for propagator, metrics, opinion_network_per_t in chunks:
+        results.setdefault(propagator, dict())
+        for k, v in metrics.items():
+            results[propagator][k] = v
+        opinion_networks[propagator] = opinion_network_per_t
+
+    plot_results(results, p)
+    return results, opinion_networks
 
 
 def plot_results(results, p):
