@@ -5,10 +5,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3cdba233-7eb5-41e6-9cad-18f8ad08bf06" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/opinion_divergence-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/opinion_divergence-checkpoint.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/notebooks/opinion_divergence.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/opinion_divergence.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/results" beforeDir="false" afterPath="$PROJECT_DIR$/results" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/opinion_networks.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/data/opinion_networks.pkl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/Untitled-checkpoint.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/authors_network-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/authors_network-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/opinion_divergence-Copy2-checkpoint.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/opinion_divergence-checkpoint.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/praw_tut-checkpoint.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/subjectivity_plots-checkpoint.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/subreddit_network-checkpoint.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/twitter_network-checkpoint.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/Untitled.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/authors_network.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/authors_network.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/opinion_divergence-Copy2.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/opinion_divergence.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/praw_tut.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/sims.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/sims.pkl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/subjectivity_plots.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/subreddit_network.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/twitter_network.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/results.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/results.pkl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/snaps/mini_reddit.json" beforeDir="false" afterPath="$PROJECT_DIR$/snaps/mini_reddit.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/snaps/reddit.json" beforeDir="false" afterPath="$PROJECT_DIR$/snaps/reddit.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Utils.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -18,49 +36,18 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/SNA$Utils.coverage" NAME="Utils Coverage Results" MODIFIED="1545171595397" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/reddit_sna$Utils.coverage" NAME="Utils Coverage Results" MODIFIED="1546279946511" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
-  </component>
-  <component name="FUSProjectUsageTrigger">
-    <session id="-205107801">
-      <usages-collector id="statistics.lifecycle.project">
-        <counts>
-          <entry key="project.open.time.5" value="1" />
-          <entry key="project.opened" value="1" />
-        </counts>
-      </usages-collector>
-      <usages-collector id="statistics.file.extensions.open">
-        <counts>
-          <entry key="py" value="3" />
-        </counts>
-      </usages-collector>
-      <usages-collector id="statistics.file.types.open">
-        <counts>
-          <entry key="Python" value="3" />
-        </counts>
-      </usages-collector>
-      <usages-collector id="statistics.file.extensions.edit">
-        <counts>
-          <entry key="py" value="757" />
-        </counts>
-      </usages-collector>
-      <usages-collector id="statistics.file.types.edit">
-        <counts>
-          <entry key="Python" value="757" />
-        </counts>
-      </usages-collector>
-    </session>
+    <SUITE FILE_PATH="coverage/SNA$Utils.coverage" NAME="Utils Coverage Results" MODIFIED="1546880449575" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/Utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="413">
-              <caret line="342" column="25" lean-forward="true" selection-start-line="342" selection-start-column="25" selection-end-line="342" selection-end-column="25" />
+            <state relative-caret-position="568">
+              <caret line="595" column="44" selection-start-line="595" selection-start-column="44" selection-end-line="595" selection-end-column="44" />
               <folding>
                 <element signature="e#0#64#0" expanded="true" />
-                <marker date="1546280268566" expanded="true" signature="14264:15045" ph="..." />
               </folding>
             </state>
           </provider>
@@ -69,7 +56,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/extra.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="54">
+            <state relative-caret-position="45">
               <caret line="3" selection-start-line="3" selection-end-line="3" />
             </state>
           </provider>
@@ -86,24 +73,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>add_comment_to_network</find>
-      <find>return f, t</find>
-      <find>f =</find>
-      <find>comments_authors</find>
-      <find>map_linkid_to_authors</find>
-      <find>self.</find>
-      <find>self.nodes</find>
-      <find>[delete</find>
-      <find>user =</find>
-      <find>jaccard</find>
-      <find>METRCS</find>
-      <find>product</find>
-      <find>snap</find>
-      <find>networkx_to_snappy</find>
-      <find>print(</find>
-      <find>metrics</find>
-      <find>import tim</find>
-      <find>sim =</find>
       <find>weight</find>
       <find>get_biggest_component</find>
       <find>augment</find>
@@ -116,6 +85,24 @@
       <find>bgr_similarities</find>
       <find>biased_assimilation</find>
       <find>augment_nio</find>
+      <find>get_modular</find>
+      <find>community</find>
+      <find>subreddit_comments</find>
+      <find>sentiment(</find>
+      <find>subj =</find>
+      <find>construct_network</find>
+      <find>assimilation</find>
+      <find>get_users_similarity</find>
+      <find>biased_</find>
+      <find>propagate_opinions</find>
+      <find>stubboorn</find>
+      <find>construct_netwo</find>
+      <find>get_modul</find>
+      <find>pearson</find>
+      <find>pearsonr</find>
+      <find>get_modula</find>
+      <find>get_average</find>
+      <find>modularity</find>
     </findStrings>
     <replaceStrings>
       <replace>subjectivity</replace>
@@ -136,12 +123,6 @@
         <option value="$PROJECT_DIR$/src/Utils.py" />
       </list>
     </option>
-  </component>
-  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
-  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
-  <component name="JsGulpfileManager">
-    <detection-done>true</detection-done>
-    <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="67" />
@@ -240,14 +221,16 @@
       <workItem from="1544992557936" duration="2000" />
       <workItem from="1545159784994" duration="10891000" />
       <workItem from="1545235138547" duration="9047000" />
+      <workItem from="1546686861146" duration="432000" />
+      <workItem from="1546764354190" duration="13609000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="49485000" />
+    <option name="totallyTimeSpent" value="63526000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="67" y="25" width="1533" height="875" extended-state="6" />
+    <frame x="67" y="25" width="1853" height="1055" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.2696705" />
@@ -256,7 +239,7 @@
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32937366" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.32937366" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.3691275" />
+      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.29805616" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -266,6 +249,7 @@
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Terminal" order="11" />
       <window_info anchor="bottom" id="Python Console" order="12" />
+      <window_info anchor="right" x="0" y="0" width="413" height="855" id="Documentation" side_tool="true" weight="0.32982844" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -299,9 +283,6 @@
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
   </component>
-  <component name="VcsContentAnnotationSettings">
-    <option name="myLimit" value="2678400000" />
-  </component>
   <component name="editorHistoryManager">
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/typeshed/stdlib/2/typing.pyi">
       <provider selected="true" editor-type-id="text-editor">
@@ -318,18 +299,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/.PyCharm2018.3/system/python_stubs/-1247972723/__builtin__.py" />
+    <entry file="file://$PROJECT_DIR$/../.PyCharm2018.3/system/python_stubs/-1247972723/__builtin__.py" />
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/pydevd.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="185">
           <caret line="1134" selection-start-line="1134" selection-end-line="1134" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/extra.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="54">
-          <caret line="3" selection-start-line="3" selection-end-line="3" />
         </state>
       </provider>
     </entry>
@@ -343,20 +317,26 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/.local/lib/python2.7/site-packages/joblib/parallel.py">
+    <entry file="file://$PROJECT_DIR$/../.local/lib/python2.7/site-packages/joblib/parallel.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="139">
           <caret line="929" selection-start-line="929" selection-end-line="929" />
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/extra.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="45">
+          <caret line="3" selection-start-line="3" selection-end-line="3" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/Utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="413">
-          <caret line="342" column="25" lean-forward="true" selection-start-line="342" selection-start-column="25" selection-end-line="342" selection-end-column="25" />
+        <state relative-caret-position="568">
+          <caret line="595" column="44" selection-start-line="595" selection-start-column="44" selection-end-line="595" selection-end-column="44" />
           <folding>
             <element signature="e#0#64#0" expanded="true" />
-            <marker date="1546280268566" expanded="true" signature="14264:15045" ph="..." />
           </folding>
         </state>
       </provider>

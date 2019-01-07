@@ -33,6 +33,9 @@ import random
 from joblib import Parallel, delayed
 
 
+from scipy.stats import pearsonr
+
+
 # # Reporting runtime
 # import time
 
@@ -169,7 +172,7 @@ def aggregate_batches(batches_stats, agg_users_posts_counts, agg_links_authors, 
     return agg_users_posts_counts, agg_links_authors, agg_users_sentiments, agg_users_subreddits, agg_users_mutual_links_count
 
 
-def get_users_similarity(filename, max_size=1e4, threshold=3):
+def get_users_similarity(filename, max_size=1e4, threshold=3, batch=False):
 
     links_authors = dict()  # {link: {user: number of posts in that link by that user}}
 
@@ -179,10 +182,52 @@ def get_users_similarity(filename, max_size=1e4, threshold=3):
 
     users_mutual_links_count = dict()  # {(u1, u2): mutual links count}
 
-    with open(filename) as f:
+    subj_ranks = np.zeros(10)
+    subj_ranks_norms = np.zeros(10)
+
+    subreddit_comments = dict()
+    if batch:
+        with open(filename) as f:
+            with open("../data/batch", 'w') as b:
+                for i, l in enumerate(f):
+                    comment = json.loads(l)
+                    b.write(l.replace("\n", "")+"\n")
+
+                    subreddit = comment["subreddit"]
+                    subreddit_comments.setdefault(subreddit, set())
+                    subreddit_comments[subreddit].add(comment["id"])
+
+                    if i + 1 > max_size: break
+
+        max_subreddit = max(subreddit_comments, key=lambda x: len(subreddit_comments[x]))
+        subreddit_comments = subreddit_comments[max_subreddit]
+
+        with open("../data/max_subreddit", "wb") as f:
+            pickle.dump([max_subreddit, subreddit_comments], f, protocol=2)
+
+        with open(filename) as f:
+            with open("../data/batch", 'w') as b:
+                for i, l in enumerate(f):
+                    comment = json.loads(l)
+                    if comment["id"] in subreddit_comments:
+                        b.write(l.replace("\n", "")+"\n")
+                    if i + 1 > max_size: break
+
+    with open("../data/max_subreddit", "rb") as f:
+        max_subreddit, subreddit_comments = pickle.load(f)
+    print("Max subreddit is: {0}, with {1:,} comments".format(max_subreddit, len(subreddit_comments)))
+
+    with open("../data/batch") as f:
         chunks = {i: list() for i in range(multiprocessing.cpu_count())}
         for i, l in enumerate(f):
             comment = json.loads(l)
+
+            subj = sentiment(comment["body"]).subjectivity
+            score = comment["score"]
+            ind = int(subj * 10 % 10)
+            subj_ranks[ind] += score
+            subj_ranks_norms[ind] += 1
+
             chunks[i % len(chunks)].append(comment)
             if i > 0 and i % 8000 == 0:
                 batches_stats = Parallel(n_jobs=len(chunks))(delayed(get_batch_stats)(comments) for comments in chunks.values())
@@ -200,12 +245,16 @@ def get_users_similarity(filename, max_size=1e4, threshold=3):
                                           users_subreddits, users_mutual_links_count)
                 print("Read {0:,} comments".format(i))
                 break
-
     print("{0:,} Users".format(len(users_posts_counts)))
     print("{0:,} Posts".format(len(links_authors)))
     print("{0:,} (out of {1:,}) edges with at least {2} mutual links".format(
         len([v for v in users_mutual_links_count.values() if v >= threshold]), len(users_mutual_links_count), threshold))
     print("Calculating similarities")
+
+    for i, v in enumerate(subj_ranks_norms):
+        subj_ranks_norms[i] = max(v, 1)
+
+    subj_ranks /= subj_ranks_norms
 
     bgr_similarities = dict()
     jaccard_similarities = dict()
@@ -231,7 +280,7 @@ def get_users_similarity(filename, max_size=1e4, threshold=3):
         users_sentiments[u] = [pol / n, subj / n]
 
     warn("Similarities are not normalized. Make sure to normalize as follows: BGR: 1-x, Jaccard as x[0]/x[1]")
-    return bgr_similarities, jaccard_similarities, users_sentiments, users_subreddits
+    return bgr_similarities, jaccard_similarities, users_sentiments, users_subreddits, subj_ranks, subj_ranks_norms
 
 
 def component2graph(component, graph):
@@ -267,7 +316,7 @@ def get_biggest_component(graph, print_first_k=5):
     return cg if cg else graph
 
 
-def construct_network(bgr_similarities, jaccard_similarities, threshold_key, threshold, sentiments, subreddits):
+def construct_network(bgr_similarities, jaccard_similarities, threshold, sentiments, subreddits):
     g = nx.DiGraph()
     for (u1, u2), (w, union_counts) in jaccard_similarities.items():
         bgr = 1 - bgr_similarities[(u1, u2)] if (u1, u2) in bgr_similarities else 0
@@ -275,19 +324,21 @@ def construct_network(bgr_similarities, jaccard_similarities, threshold_key, thr
             bgr += 1 - bgr_similarities[(u2, u1)]
         bgr = bgr ** (1./w)
         jac = float(w) / union_counts
+        cont = False
+        for k, v in threshold.items():
+            if k.lower() == "jaccard":
+                t = jac
+            elif k.lower() == "bgr":
+                t = bgr
+            elif k.lower() == "w":
+                t = w
+            else:
+                raise Exception("Unidentified threshold key")
 
-        if threshold_key.lower() == "jaccard":
-            t = jac
-        elif threshold_key.lower() == "bgr":
-            t = bgr
-        elif threshold_key.lower() == "w":
-            t = w
-        else:
-            raise Exception("Unidentified threshold key")
-
-        if t < threshold:
-            continue
-
+            if t < v:
+                cont = True
+                break
+        if cont: continue
         if g.has_edge(u2, u1):
             old_bgr = g.edges[(u2, u1)]["bgr"]
             g.edges[(u2, u1)]["bgr"] = (old_bgr + bgr) / 2.
@@ -300,8 +351,8 @@ def construct_network(bgr_similarities, jaccard_similarities, threshold_key, thr
         g.nodes[n]["polarity"] = pol
         g.nodes[n]["subjectivity"] = subj
 
-    print("{0} nodes".format(len(g.nodes)))
-    print("{0} edges".format(len(g.edges)))
+    print("{0:,} nodes".format(len(g.nodes)))
+    print("{0:,} edges".format(len(g.edges)))
     return add_subreddits(g, subreddits)
 
 
@@ -312,6 +363,24 @@ def add_subreddits(g, users_subreddits):
         g.nodes[n]["subreddit"] = subreddits[0][0]
         g.nodes[n]["subs"] = "-".join([str(s) for s in subreddits])
     return g
+
+
+def get_modularity(nxg):
+    g = networkx_to_snappy(nxg)
+    CmtyV = snap.TCnComV()
+    modularity = snap.CommunityGirvanNewman(g, CmtyV)
+    return modularity
+
+
+def get_avg_metric(nxg, metric, nodes=None):
+    r = 0.
+    if nodes:
+        for n in nodes:
+            r+= nxg.nodes[n][metric]
+    else:
+        for n, d in nxg.nodes(data=True):
+            r += d[metric]
+    return r / len(nxg.nodes)
 
 
 def girvan_newmann(nxg):
@@ -329,6 +398,13 @@ def girvan_newmann(nxg):
     print("Communities: {0}".format(len(CmtyV)))
 
     return nxg
+
+
+def get_bridges(nxg):
+    g = networkx_to_snappy(nxg)
+    EdgeV = snap.TIntPrV()
+    snap.GetEdgeBridges(g, EdgeV)
+    return [(e.GetVal1(), e.GetVal2()) for e in EdgeV]
 
 
 def augment_nodes(graph, metrics=METRICS, weight=None, community_detection=False):
@@ -390,7 +466,7 @@ def assign_opinions(g, prob=0.05):
     return new_g
 
 
-def propagate_opinions(g, propagator="bgr", stubbornness="subjectivity"):
+def propagate_opinions(g, propagator="bgr", stubbornness=0.5):
     new_g = g.copy()
     if propagator == "w":
         max_w = max([g.edges[e]["w"] for e in g.edges])
@@ -401,7 +477,7 @@ def propagate_opinions(g, propagator="bgr", stubbornness="subjectivity"):
                 else float(propagator.replace("random", ""))
             p = p / max_w if propagator == "w" else p
             # if np.random.random() * p > g.nodes[j][stubbornness]:
-            if p > g.nodes[j][stubbornness]:
+            if p > g.nodes[j]["subjectivity"] if stubbornness == "subjectivity" else stubbornness:
                 new_g.nodes[j]["opinion"] = 1
     return new_g
 
@@ -409,7 +485,6 @@ def propagate_opinions(g, propagator="bgr", stubbornness="subjectivity"):
 def baa(ntw, propagator, T):
     opinion_network = ntw.copy()
     metrics = {"GDI": np.zeros(T),
-               "NDI w": np.zeros(T),
                "NDI jac": np.zeros(T),
                "NDI bgr": np.zeros(T)
                }
@@ -417,10 +492,10 @@ def baa(ntw, propagator, T):
     for t in range(T):
         ntw_at_t = propagate_opinions(opinion_network, propagator)
         gdi = global_disagreement_index(ntw_at_t)
-        ndi_w = network_disagreement_index(ntw_at_t, "w")
+#        ndi_w = network_disagreement_index(ntw_at_t, "w")
         ndi_jac = network_disagreement_index(ntw_at_t, "jac")
         ndi_bgr = network_disagreement_index(ntw_at_t, "bgr")
-        for k, v in zip(["GDI", "NDI w", "NDI jac", "NDI bgr"], [gdi, ndi_w, ndi_jac, ndi_bgr]):
+        for k, v in zip(["GDI", "NDI jac", "NDI bgr"], [gdi, ndi_jac, ndi_bgr]):
             metrics[k][t] = v
         opinion_network = ntw_at_t
         opinion_networks.append(opinion_network)
@@ -463,3 +538,59 @@ def plot_results(results, p):
         ax.set_xlabel("t")
         ax.set_ylabel("NDI")
         ax.legend(legend, loc=1)
+
+
+def random_walk(g, max_depth=3):
+    subgraph = nx.Graph()
+    seed = np.random.choice(g.nodes)
+    queue = [seed, "level"]
+    depth = 0
+    while len(queue) > 0:
+        node = queue.pop(0)
+        if node == "level":
+            depth += 1
+        elif depth < max_depth:
+            for n in nx.neighbors(g, node):
+                queue.append(n)
+                subgraph.add_edge(node, n)
+            queue.append("level")
+    return subgraph
+
+
+def information_diffusion(g, p, T, propagator):
+    opinion_ntw = assign_opinions(g, p)
+    results = list()
+    opinion_network_subj = opinion_ntw.copy()
+    opinion_network_rand = opinion_ntw.copy()
+    for t in range(T):
+        opinion_network_subj = propagate_opinions(opinion_network_subj, propagator, stubbornness="subjectivity")
+        opinion_network_rand = propagate_opinions(opinion_network_rand, propagator, stubbornness=0.5)
+
+        gdi_subj = global_disagreement_index(opinion_network_subj)
+        gdi_rand = global_disagreement_index(opinion_network_rand)
+
+        ndi_jac_subj = network_disagreement_index(opinion_network_subj, "jac")
+        ndi_jac_rand = network_disagreement_index(opinion_network_rand, "jac")
+
+        ndi_bgr_subj = network_disagreement_index(opinion_network_subj, "bgr")
+        ndi_bgr_rand = network_disagreement_index(opinion_network_rand, "bgr")
+
+        results.append((gdi_subj, gdi_rand, ndi_jac_subj, ndi_jac_rand, ndi_bgr_subj, ndi_bgr_rand))
+    return results
+
+def plot_stubbornness(results, indx1, indx2, label):
+    subj = [i[indx1] for i in results]
+    rand = [i[indx2] for i in results]
+    f, ax = plt.subplots(figsize=(12,7))
+    ax.plot(subj)
+    ax.plot(rand)
+    ax.legend(["Subjectivity", "Random"])
+    ax.set_ylabel(label)
+    ax.set_xlabel("Time")
+    plt.show()
+
+def stats(a, b=None):
+    print("min: {0}\nmax: {1}\nmean: {2}\nstd: {3}".format(min(a), max(a), np.mean(a), np.std(a)))
+    if b:
+        r, p = pearsonr(a, b)
+        print("r: {0}\tp: {1}".format(r, p))
